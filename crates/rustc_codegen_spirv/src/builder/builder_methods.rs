@@ -438,8 +438,15 @@ impl<'a, 'tcx> Builder<'a, 'tcx> {
                     ty_kind = self.lookup_type(ty);
 
                     let stride = ty_kind.sizeof(self)?;
-                    indices.push((offset.bytes() / stride.bytes()).try_into().ok()?);
-                    offset = Size::from_bytes(offset.bytes() % stride.bytes());
+                    if stride.bytes() != 0 {
+                        indices.push((offset.bytes() / stride.bytes()).try_into().ok()?);
+                        offset = Size::from_bytes(offset.bytes() % stride.bytes());
+                    } else if offset.bytes() == 0 {
+                        indices.push(0);
+                        offset = Size::from_bytes(0);
+                    } else {
+                        panic!("Non-zero offset over zero stride.");
+                    }
                 }
                 _ => return None,
             }
